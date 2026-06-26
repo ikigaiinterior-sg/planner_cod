@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>IKIGAI — Project Schedule Planner v1</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#2A1F14;--gold:#C2A46E;--goldPale:#E8D9C0;--cream:#F8F4EF;--creamD:#EFE9E0;
+  --stone:#8A7E72;--border:#E0D8CE;--danger:#8B3A3A;--success:#3A6E4A;--terra:#C27B5A;
+  --P1:#1F4E79;--PRE:#375623;--OFF:#7B5B00;--P4D:#7B0000;--P4:#205A6D;--QC:#4A235A;--P5:#6E3000;
+}
+body{background:#F0EDE8;font-family:'Quicksand',sans-serif;color:var(--ink);min-height:100vh;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--creamD);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* AUTH */
+#authWrap{position:fixed;inset:0;background:#E8E2D8;display:flex;align-items:center;justify-content:center;z-index:9999;}
+.authBox{background:#F5F0E8;border:1px solid #E0D8CE;border-radius:4px;padding:48px 40px;width:360px;text-align:center;box-shadow:0 8px 40px rgba(42,31,20,0.12);}
+.authLogo{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);letter-spacing:6px;}
+.authSub{font-size:9px;letter-spacing:3px;color:#8A7E72;margin-bottom:32px;text-transform:uppercase;}
+.authInput{width:100%;background:#F8F4EF;border:1px solid #E0D8CE;border-radius:2px;padding:11px 14px;color:var(--ink);font-family:'Quicksand',sans-serif;font-size:13px;margin-bottom:10px;}
+.authBtn{width:100%;background:var(--gold);border:none;border-radius:2px;padding:12px;color:var(--ink);font-family:'Quicksand',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:6px;}
+.authErr{color:#C27B5A;font-size:11px;margin-top:8px;display:none;}
+
+/* APP */
+#app{display:none;}
+.topbar{background:#1C1510;border-bottom:1px solid rgba(194,164,110,0.2);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.topbarL{display:flex;align-items:center;gap:16px;}
+.tbLogo{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--gold);letter-spacing:4px;}
+.tbSub{font-size:9px;color:rgba(194,164,110,0.5);letter-spacing:2px;}
+.topbarR{display:flex;align-items:center;gap:10px;}
+.tbBtn{background:transparent;border:1px solid rgba(194,164,110,0.3);border-radius:2px;padding:6px 14px;color:rgba(194,164,110,0.7);font-size:10px;font-weight:600;letter-spacing:1.5px;cursor:pointer;font-family:'Quicksand',sans-serif;transition:all .15s;}
+.tbBtn:hover{border-color:var(--gold);color:var(--gold);}
+.tbBtnPrimary{background:var(--gold);border:none;border-radius:2px;padding:6px 16px;color:var(--ink);font-size:10px;font-weight:700;letter-spacing:1.5px;cursor:pointer;font-family:'Quicksand',sans-serif;}
+
+/* MAIN LAYOUT */
+.mainWrap{display:flex;min-height:calc(100vh - 56px);}
+.sidebar{width:280px;background:#DED6C8;flex-shrink:0;overflow-y:auto;padding:20px 0;position:sticky;top:56px;height:calc(100vh - 56px);}
+.sbSection{padding:0 0 16px;}
+.sbLabel{font-size:8px;letter-spacing:2.5px;color:#B0A090;padding:0 20px 8px;text-transform:uppercase;font-weight:600;}
+.sbField{padding:0 20px 10px;}
+.sbField label{display:block;font-size:9px;letter-spacing:1.5px;color:#9A8E82;margin-bottom:4px;text-transform:uppercase;}
+.sbField input,.sbField select{width:100%;background:#F5F0E8;border:1px solid #D0C8BC;border-radius:2px;padding:8px 10px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--ink);}
+.sbField input[type="date"]{font-size:11px;}
+.sbField input:focus,.sbField select:focus{outline:2px solid var(--gold);outline-offset:-1px;}
+.sbDivider{height:1px;background:rgba(42,31,20,0.1);margin:8px 20px 16px;}
+.sbPhaseRow{display:flex;align-items:center;gap:10px;padding:5px 20px;cursor:pointer;user-select:none;}
+.sbPhaseRow:hover{background:rgba(42,31,20,0.04);}
+.sbPhaseDot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.sbPhaseLabel{font-size:11px;color:#6A5E54;font-weight:500;flex:1;}
+.sbPhaseToggle{width:28px;height:16px;border-radius:20px;position:relative;transition:background .15s;flex-shrink:0;}
+.sbPhaseToggle .knob{position:absolute;top:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s;}
+
+/* CONTENT */
+.content{flex:1;padding:24px 28px;overflow-x:auto;}
+.pageHdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.pageTitle{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);font-weight:400;}
+.pageMeta{font-size:10px;color:var(--stone);letter-spacing:1px;margin-top:2px;}
+
+/* CARDS */
+.card{background:#F5F0E8;border:1px solid #D8D0C4;border-radius:6px;padding:18px 20px;margin-bottom:14px;}
+.cardTitle{font-size:8px;letter-spacing:3px;color:#A09080;text-transform:uppercase;margin-bottom:10px;font-weight:600;}
+
+/* SUMMARY CARDS */
+.summaryGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.sumCard{background:#F5F0E8;border:1px solid #D8D0C4;border-radius:6px;padding:16px;}
+.sumVal{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);font-weight:600;}
+.sumLabel{font-size:9px;color:var(--stone);letter-spacing:1px;margin-top:3px;}
+.sumSub{font-size:10px;color:var(--stone);margin-top:4px;}
+
+/* GANTT */
+.ganttWrap{overflow-x:auto;border-radius:6px;border:1px solid #D8D0C4;}
+.ganttHeader{display:flex;background:var(--ink);position:sticky;top:0;z-index:10;}
+.ganttHeaderLabel{width:260px;flex-shrink:0;padding:10px 14px;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--gold);}
+.ganttHeaderDates{display:flex;flex:1;overflow:hidden;}
+.ganttHeaderDay{flex:1;min-width:28px;text-align:center;padding:6px 2px;font-size:8px;color:rgba(194,164,110,0.6);font-weight:600;border-left:1px solid rgba(194,164,110,0.1);}
+.ganttHeaderDay.weekend{color:rgba(194,164,110,0.3);}
+.ganttHeaderDay.today{background:rgba(194,164,110,0.15);color:var(--gold);}
+.ganttRow{display:flex;align-items:center;border-bottom:1px solid #EBE5DC;min-height:36px;}
+.ganttRow:last-child{border-bottom:none;}
+.ganttRow.phaseHdr{background:#EDE8DF;min-height:28px;}
+.ganttRow:hover{background:#F0EAE0;}
+.ganttRowLabel{width:260px;flex-shrink:0;padding:6px 14px;font-size:11px;color:var(--ink);display:flex;align-items:center;gap:8px;}
+.ganttRowLabel.phaseHdr{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--stone);}
+.ganttPhaseDot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ganttCells{display:flex;flex:1;position:relative;min-height:36px;}
+.ganttCell{flex:1;min-width:28px;border-left:1px solid #F0EAE0;position:relative;}
+.ganttCell.weekend{background:#F5F2EE;}
+.ganttCell.ph{background:#FFF9E6;}
+.ganttCell.today{background:rgba(194,164,110,0.08);}
+.ganttBar{position:absolute;top:6px;bottom:6px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;padding:0 5px;cursor:default;z-index:2;}
+.ganttBar .barLabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.todayLine{position:absolute;top:0;bottom:0;width:2px;background:var(--gold);opacity:0.6;pointer-events:none;z-index:5;}
+.handoverMarker{position:absolute;top:0;bottom:0;width:2px;background:var(--danger);opacity:0.8;pointer-events:none;z-index:5;}
+
+/* PHASES TABLE */
+.phaseTable{width:100%;border-collapse:collapse;font-size:12px;}
+.phaseTable th{font-size:8px;letter-spacing:2px;color:#A09080;text-align:left;padding:8px 12px;border-bottom:1px solid #D8D0C4;background:#F0EAE0;text-transform:uppercase;font-weight:600;}
+.phaseTable td{padding:10px 12px;border-bottom:1px solid rgba(42,31,20,0.06);vertical-align:middle;color:var(--ink);}
+.phaseTable tr:hover td{background:#EAE4DA;}
+.phaseTable tr.phaseGroupHdr td{background:#E8E2D8;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--stone);padding:5px 12px;}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.badge-active{background:#E8F0E8;color:var(--success);}
+.badge-pending{background:#FFF0E0;color:#B05000;}
+.badge-overdue{background:#F5E8E8;color:var(--danger);}
+.badge-offsite{background:#EEE8F8;color:#4A235A;}
+
+/* ALERTS */
+.alert{border-radius:3px;padding:10px 16px;margin-bottom:12px;font-size:11px;display:flex;gap:10px;align-items:flex-start;}
+.alert-amber{background:#FFF8EC;border-left:3px solid var(--gold);color:#7A6020;}
+.alert-red{background:#FBF0F0;border-left:3px solid var(--danger);color:var(--danger);}
+.alert-green{background:#F0F7F0;border-left:3px solid var(--success);color:var(--success);}
+
+/* PRINT */
+@media print{
+  #authWrap,#app .topbar,#app .sidebar,#app .no-print{display:none!important;}
+  .content{padding:10px;}
+  body{background:#fff;}
+}
+
+/* MILESTONE PILLS */
+.milestone{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:9px;font-weight:600;background:rgba(42,31,20,0.06);color:var(--stone);margin:2px;}
+.milestone.done{background:#E8F0E8;color:var(--success);}
+.milestone.due{background:#F5E8E8;color:var(--danger);}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;}
+.tab{padding:9px 18px;font-size:11px;font-weight:600;color:var(--stone);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab:hover{color:var(--ink);}
+
+/* PE SCHEDULE */
+.peRow{display:grid;grid-template-columns:28px 1fr 130px 120px;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);align-items:center;font-size:11px;}
+.peRow.header{background:#F0EAE0;font-size:8px;font-weight:700;letter-spacing:1.5px;color:var(--stone);text-transform:uppercase;}
+.peRow.gate{background:#FFF8F0;border-left:3px solid var(--danger);}
+
+/* MODAL */
+.modalOverlay{position:fixed;inset:0;background:rgba(26,18,8,0.7);z-index:500;display:none;align-items:center;justify-content:center;}
+.modalOverlay.open{display:flex;}
+.modal{background:#F5F0E8;border-radius:0;width:500px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(42,31,20,0.15);border:1px solid #D8D0C4;}
+.modalHdr{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modalTitle{font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--ink);}
+.modalClose{background:none;border:none;font-size:20px;cursor:pointer;color:var(--stone);}
+.modalBody{padding:22px;}
+.modalFoot{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.mLabel{font-size:9px;letter-spacing:1.5px;color:var(--stone);text-transform:uppercase;display:block;margin-bottom:4px;}
+.mInput{width:100%;border:1px solid var(--border);border-radius:2px;padding:8px 11px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--ink);background:#fff;margin-bottom:10px;}
+.mInput:focus{outline:2px solid var(--gold);outline-offset:-1px;}
+.mRow{display:grid;gap:10px;margin-bottom:0;}
+.mRow.cols2{grid-template-columns:1fr 1fr;}
+.mRow.cols3{grid-template-columns:1fr 1fr 1fr;}
+
+/* btn */
+.btnP{background:transparent;border:1px solid var(--gold);border-radius:0;padding:7px 16px;font-size:9px;font-weight:700;letter-spacing:2px;cursor:pointer;font-family:'Quicksand',sans-serif;color:var(--ink);text-transform:uppercase;transition:all .2s;}
+.btnP:hover{background:var(--gold);}
+.btnS{background:transparent;border:1px solid rgba(42,31,20,0.2);border-radius:0;padding:7px 12px;font-size:9px;color:var(--stone);cursor:pointer;font-family:'Quicksand',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+.btnDanger{background:var(--danger);border:none;border-radius:2px;padding:6px 12px;font-size:10px;font-weight:700;color:#fff;cursor:pointer;font-family:'Quicksand',sans-serif;}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authWrap">
+  <div class="authBox">
+    <div class="authLogo">IKIGAI</div>
+    <div class="authSub" style="margin-top:3px;">Project Schedule Planner · v1</div>
+    <input class="authInput" id="aUser" type="text" placeholder="Username" autocomplete="off"/>
+    <input class="authInput" id="aPass" type="password" placeholder="Password"/>
+    <button class="authBtn" onclick="doLogin()">ENTER</button>
+    <div class="authErr" id="aErr">Incorrect credentials</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbarL">
+      <div>
+        <div class="tbLogo">IKIGAI</div>
+        <div class="tbSub">SCHEDULE PLANNER · v1</div>
+      </div>
+      <div id="tbProjectBadge" style="display:none;background:rgba(194,164,110,0.1);border:1px solid rgba(194,164,110,0.3);border-radius:2px;padding:4px 12px;">
+        <span style="font-size:9px;color:rgba(194,164,110,0.6);letter-spacing:2px;">ACTIVE</span>
+        <span id="tbProjectName" style="font-size:11px;color:var(--gold);margin-left:8px;font-weight:600;"></span>
+      </div>
+    </div>
+    <div class="topbarR">
+      <span id="tbDate" style="font-size:10px;color:rgba(194,164,110,0.5);letter-spacing:1px;"></span>
+      <button class="tbBtn" onclick="printSchedule()">🖨 Print</button>
+      <button class="tbBtnPrimary" onclick="openNewProject()">+ New Project</button>
+      <button class="tbBtn" onclick="doLogout()" style="margin-left:8px;">Logout</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="mainWrap">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- PROJECT SELECT -->
+      <div class="sbSection">
+        <div class="sbLabel">Active Project</div>
+        <div class="sbField">
+          <label>Project</label>
+          <select id="sbProject" onchange="loadProject(this.value)">
+            <option value="">— Select project —</option>
+          </select>
+        </div>
+        <div class="sbField">
+          <label>Client Name</label>
+          <input id="sbClient" type="text" readonly style="background:#EDE8DF;cursor:default;"/>
+        </div>
+        <div class="sbField">
+          <label>Property Address</label>
+          <input id="sbAddress" type="text" readonly style="background:#EDE8DF;cursor:default;"/>
+        </div>
+      </div>
+
+      <div class="sbDivider"></div>
+
+      <!-- DATES -->
+      <div class="sbSection">
+        <div class="sbLabel">Key Dates</div>
+        <div class="sbField">
+          <label>Start Date (Site Start)</label>
+          <input type="date" id="sbStart" onchange="onDateChange()"/>
+        </div>
+        <div class="sbField">
+          <label>Handover Deadline</label>
+          <input type="date" id="sbHandover" onchange="onDateChange()"/>
+        </div>
+        <div class="sbField">
+          <label>Measurement Day</label>
+          <input type="date" id="sbMeasure" onchange="onDateChange()"/>
+        </div>
+        <div class="sbField">
+          <label>Saturday Works?</label>
+          <select id="sbSat" onchange="onDateChange()">
+            <option value="no">No — Mon–Fri only</option>
+            <option value="yes">Yes — include Saturdays</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sbDivider"></div>
+
+      <!-- PHASES TOGGLE -->
+      <div class="sbSection">
+        <div class="sbLabel">Phases Included</div>
+        <div id="phaseToggles"></div>
+      </div>
+
+      <div class="sbDivider"></div>
+
+      <!-- QUICK DURATIONS -->
+      <div class="sbSection">
+        <div class="sbLabel">Key Durations (Working Days)</div>
+        <div class="sbField">
+          <label>Demolition Nights</label>
+          <select id="dDemolition">
+            <option value="2">2 nights (standard)</option>
+            <option value="3">3 nights</option>
+            <option value="4">4 nights</option>
+          </select>
+        </div>
+        <div class="sbField">
+          <label>Carpentry Off-Site Fab</label>
+          <select id="dCarpOff">
+            <option value="10">10 days</option>
+            <option value="14" selected>14 days</option>
+            <option value="21">21 days</option>
+          </select>
+        </div>
+        <div class="sbField">
+          <label>Carpentry Installation</label>
+          <select id="dCarpInst">
+            <option value="5" selected>5 days</option>
+            <option value="7">7 days</option>
+          </select>
+        </div>
+        <div class="sbField">
+          <label>Electrical (Rough-In + Final)</label>
+          <select id="dElec">
+            <option value="5+2" selected>5 + 2 days</option>
+            <option value="7+3">7 + 3 days</option>
+            <option value="5+3">5 + 3 days</option>
+          </select>
+        </div>
+        <div class="sbField">
+          <label>Partition + Ceiling Works</label>
+          <select id="dPartition">
+            <option value="5">5 days</option>
+            <option value="7" selected>7 days</option>
+            <option value="10">10 days</option>
+          </select>
+        </div>
+        <div class="sbField">
+          <label>Floor Works</label>
+          <select id="dFloor">
+            <option value="3">3 days</option>
+            <option value="5" selected>5 days</option>
+            <option value="7">7 days</option>
+          </select>
+        </div>
+        <div class="sbField">
+          <label>Paint + Wall Finishes</label>
+          <select id="dPaint">
+            <option value="3">3 days</option>
+            <option value="5" selected>5 days</option>
+            <option value="7">7 days</option>
+          </select>
+        </div>
+        <div class="sbField">
+          <label>QC + Rectification</label>
+          <select id="dQC">
+            <option value="3" selected>3 days rect (standard)</option>
+            <option value="5">5 days rect</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="padding:16px 20px;">
+        <button class="btnP" style="width:100%;justify-content:center;" onclick="generateSchedule()">▶ Generate Schedule</button>
+      </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content">
+
+      <!-- WELCOME STATE -->
+      <div id="welcomeState">
+        <div style="text-align:center;padding:60px 20px;">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--ink);font-weight:300;margin-bottom:8px;">Project Schedule Planner</div>
+          <div style="font-size:12px;color:var(--stone);margin-bottom:32px;line-height:1.7;">Select an existing project from the sidebar, or create a new one.<br>Enter your key dates and phase durations, then generate the schedule.</div>
+          <button class="btnP" onclick="openNewProject()">+ Create New Project</button>
+        </div>
+      </div>
+
+      <!-- SCHEDULE STATE -->
+      <div id="scheduleState" style="display:none;">
+
+        <!-- Page header -->
+        <div class="pageHdr no-print">
+          <div>
+            <div class="pageTitle" id="schTitle">Project Schedule</div>
+            <div class="pageMeta" id="schMeta"></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btnS" onclick="openEditPhases()">Edit Phases</button>
+            <button class="btnP" onclick="generateSchedule()">↺ Regenerate</button>
+          </div>
+        </div>
+
+        <!-- SUMMARY CARDS -->
+        <div class="summaryGrid" id="summaryCards"></div>
+
+        <!-- ALERT ZONE -->
+        <div id="alertZone"></div>
+
+        <!-- TABS -->
+        <div class="tabs no-print">
+          <div class="tab active" onclick="switchTab('gantt',this)">Gantt View</div>
+          <div class="tab" onclick="switchTab('phases',this)">Phase Table</div>
+          <div class="tab" onclick="switchTab('pe',this)">PE · URA Schedule</div>
+          <div class="tab" onclick="switchTab('milestones',this)">Milestones</div>
+        </div>
+
+        <!-- GANTT -->
+        <div id="tabGantt">
+          <div class="ganttWrap" id="ganttWrap"></div>
+        </div>
+
+        <!-- PHASE TABLE -->
+        <div id="tabPhases" style="display:none;">
+          <div class="card" style="overflow:auto;">
+            <table class="phaseTable" id="phaseTable"></table>
+          </div>
+        </div>
+
+        <!-- PE/URA -->
+        <div id="tabPE" style="display:none;">
+          <div class="card">
+            <div class="cardTitle">PE · URA FLOATING SCHEDULE</div>
+            <div class="alert alert-amber" style="margin-bottom:14px;">
+              <span>◆</span>
+              <div>Dates below float from the <strong>PTW Submission Day</strong>. Change the anchor date below when PTW is submitted. PE clearance gates entrance wall demolition.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+              <div>
+                <label class="mLabel">PTW Submission Date (Anchor D+0)</label>
+                <input type="date" id="peAnchor" onchange="renderPE()" style="border:1px solid var(--border);border-radius:2px;padding:7px 10px;font-family:'Quicksand',sans-serif;font-size:12px;color:var(--ink);background:var(--cream);"/>
+              </div>
+              <div style="padding-top:16px;">
+                <span style="font-size:11px;color:var(--stone);">All milestone dates update automatically below.</span>
+              </div>
+            </div>
+            <div id="peTable"></div>
+            <div style="margin-top:16px;padding:14px;background:var(--creamD);border-radius:3px;">
+              <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:var(--stone);margin-bottom:8px;">CONTINGENCY GUIDANCE</div>
+              <div style="font-size:11px;color:var(--stone);line-height:1.8;">
+                Delay ≤5 working days: absorb in programme, no client notification required.<br>
+                Delay 5–10 working days: notify client in writing, review compression options with Dylan.<br>
+                Delay >10 working days: client meeting required — reassess handover date.<br>
+                PE cost overrun: issue VO immediately before proceeding with works.<br>
+                URA objection: pause Phase 5 (façade) only — interior fitout unaffected.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MILESTONES -->
+        <div id="tabMilestones" style="display:none;">
+          <div id="milestonesContent"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW PROJECT MODAL -->
+<div class="modalOverlay" id="modalNewProject">
+  <div class="modal">
+    <div class="modalHdr">
+      <div class="modalTitle">New Project</div>
+      <button class="modalClose" onclick="closeModal('modalNewProject')">✕</button>
+    </div>
+    <div class="modalBody">
+      <div class="mRow cols2" style="margin-bottom:10px;">
+        <div>
+          <label class="mLabel">Project Name</label>
+          <input class="mInput" id="npName" placeholder="e.g. Project Odyssey"/>
+        </div>
+        <div>
+          <label class="mLabel">Client Name</label>
+          <input class="mInput" id="npClient" placeholder="Mr / Ms ..."/>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="mLabel">Property Address</label>
+        <input class="mInput" id="npAddress" placeholder="Unit / Block / Development"/>
+      </div>
+      <div class="mRow cols2" style="margin-bottom:10px;">
+        <div>
+          <label class="mLabel">Project Type</label>
+          <select class="mInput" id="npType" style="margin-bottom:0;">
+            <option>Commercial Fitout</option>
+            <option>Condo Renovation</option>
+            <option>Landed Renovation</option>
+            <option>HDB Renovation</option>
+            <option>Office Renovation</option>
+            <option>A&A Works</option>
+          </select>
+        </div>
+        <div>
+          <label class="mLabel">Quote Reference</label>
+          <input class="mInput" id="npRef" placeholder="ii-XXXXXX"/>
+        </div>
+      </div>
+      <div class="mRow cols2" style="margin-bottom:10px;">
+        <div>
+          <label class="mLabel">ID In-Charge</label>
+          <select class="mInput" id="npID" style="margin-bottom:0;">
+            <option value="">— Select —</option>
+            <option>Tammy Vu</option>
+            <option>Euric Ng</option>
+            <option>Dylan Lu</option>
+            <option>Chloe</option>
+          </select>
+        </div>
+        <div>
+          <label class="mLabel">Billing Entity</label>
+          <select class="mInput" id="npEntity" style="margin-bottom:0;">
+            <option>Ikigai Interior Pte Ltd</option>
+            <option>Ikigai Design Atelier</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="mLabel">Contract Value (SGD)</label>
+        <input class="mInput" id="npValue" type="number" placeholder="0.00"/>
+      </div>
+    </div>
+    <div class="modalFoot">
+      <button class="btnS" onclick="closeModal('modalNewProject')">Cancel</button>
+      <button class="btnP" onclick="saveNewProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════
+const USERS={
+  dylan:{pass:'ikigai2026',name:'Dylan Lu',role:'director'},
+  tammy:{pass:'tammy2026',name:'Tammy Vu',role:'staff'},
+  euric:{pass:'euric2026',name:'Euric Ng',role:'staff'},
+  admin:{pass:'ikigai2026',name:'Admin',role:'director'}
+};
+
+// Singapore public holidays 2026
+const SG_PH_2026=new Set([
+  '2026-01-01','2026-01-29','2026-01-30',
+  '2026-04-03','2026-05-01','2026-05-13',
+  '2026-05-31','2026-06-07','2026-08-09',
+  '2026-10-20','2026-12-25'
+]);
+
+const PHASE_COLOURS={
+  'P1':'#1F4E79','PRE':'#375623','OFF':'#7B5B00',
+  'P4D':'#7B0000','P4':'#205A6D','QC':'#4A235A',
+  'P5':'#6E3000','PAY':'#8B3A3A'
+};
+
+const PHASE_DEFS=[
+  {id:'P1',label:'Phase 1 — Rear Office',colour:'#1F4E79',tasks:[
+    {id:'P1a',label:'Partition + Ceiling (Rear)',durKey:'dPartition',hours:'9am–6pm'},
+    {id:'P1b',label:'Aluminium / Doors (Rear)',dur:3,hours:'9am–6pm'},
+    {id:'P1c',label:'Item Relocation',dur:1,hours:'9am–6pm'},
+  ]},
+  {id:'PRE',label:'Pre-Reno',colour:'#375623',tasks:[
+    {id:'PRE1',label:'Measurement Day (AM) + PTW Submission (PM)',dur:1,hours:'Full Day',isAnchor:true},
+    {id:'PRE2',label:'Floor Protection',dur:1,hours:'9am–6pm'},
+  ]},
+  {id:'OFF',label:'Off-Site (Concurrent)',colour:'#7B5B00',tasks:[
+    {id:'OFF1',label:'Off-Site Fabrication — Carpentry',durKey:'dCarpOff',hours:'Off-site'},
+    {id:'OFF2',label:'Off-Site Fabrication — Aluminium / Glass',dur:10,hours:'Off-site'},
+    {id:'OFF3',label:'Off-Site Fabrication — Signage',dur:10,hours:'Off-site'},
+    {id:'OFF4',label:'Procurement — System Furniture (PO)',dur:1,hours:'Off-site (long lead ~8wk)'},
+  ]},
+  {id:'P4D',label:'Demolition',colour:'#7B0000',tasks:[
+    {id:'P4D1',label:'Site Clearout',dur:1,hours:'9am–6pm'},
+    {id:'P4D2',label:'Demolition — Night 1 (Partitions)',durKey:'dDemolition',dur:1,hours:'After 5pm — cease by 6am'},
+    {id:'P4D3',label:'Demolition — Night 2 (Entrance) [PE-gated]',dur:1,hours:'After 5pm — cease by 6am'},
+  ]},
+  {id:'P4',label:'Phase 4 — Main Fitout',colour:'#205A6D',tasks:[
+    {id:'P4a',label:'Electrical Rough-In',durKey:'dElecRoughIn',hours:'9am–6pm'},
+    {id:'P4b',label:'Partition + Ceiling Works (Retail)',durKey:'dPartition',hours:'9am–6pm'},
+    {id:'P4c',label:'Floor Works (Tiles + Skirting)',durKey:'dFloor',hours:'9am–6pm',note:'Allow 24hr cure before carpentry'},
+    {id:'P4d',label:'Painting + Wallcover Works',durKey:'dPaint',hours:'9am–6pm'},
+    {id:'P4e',label:'Carpentry Installation',durKey:'dCarpInst',hours:'9am–6pm'},
+    {id:'P4f',label:'Electrical Final Fix + T&C',durKey:'dElecFinal',hours:'9am–6pm'},
+    {id:'P4g',label:'Aluminium / Glass / Doors Installation',dur:2,hours:'9am–6pm'},
+    {id:'P4h',label:'Miscellaneous — Signage + Logo',dur:2,hours:'9am–6pm'},
+  ]},
+  {id:'QC',label:'QC + Rectification',colour:'#4A235A',tasks:[
+    {id:'QC1',label:'QC Walk-Thru — ID Team',dur:1,hours:'PM – Half Day'},
+    {id:'QC2',label:'Rectification — All Trades',durKey:'dQCRect',hours:'9am–6pm'},
+    {id:'QC3',label:'System Furniture Delivery + Installation',dur:2,hours:'9am–6pm'},
+  ]},
+  {id:'P5',label:'Phase 5 — Façade',colour:'#6E3000',tasks:[
+    {id:'P5a',label:'Façade Limewash Paint',dur:3,hours:'9am–6pm'},
+    {id:'P5b',label:'Reinstatement — Vents + Doors',dur:1,hours:'9am–6pm'},
+  ]},
+  {id:'HO',label:'Handover',colour:'#8B3A3A',tasks:[
+    {id:'HO1',label:'Final Clean — Full Unit',dur:1,hours:'9am–6pm'},
+    {id:'HO2',label:'Handover Walk-Thru + Warranty Issued',dur:1,hours:'9am–12pm'},
+  ]},
+];
+
+const PE_MILESTONES=[
+  {label:'Pre-Submission Preparation',offset:-7,isGate:false,note:'Appoint PE before submission'},
+  {label:'PTW / PE Submission (D+0)',offset:0,isGate:false,note:'Anchor date — all milestones float from here',isAnchor:true},
+  {label:'Acknowledgement Follow-Up',offset:1,isGate:false,note:'Obtain reference number from authority'},
+  {label:'Week 1 Chase',offset:5,isGate:false,note:'First follow-up call / email'},
+  {label:'Week 2 Chase + Escalate',offset:10,isGate:false,note:'Escalate to Dylan if no response'},
+  {label:'PE Acquired ✓ (Target)',offset:15,isGate:true,note:'🔴 GATES: Entrance wall demolition (Night 2)'},
+  {label:'Gate Check — Demo Cleared',offset:15,isGate:true,note:'Brief demolition contractor to proceed'},
+  {label:'URA Notification (if needed)',offset:20,isGate:false,note:'Gates Phase 5 Façade works only'},
+  {label:'Façade Gate Check',offset:25,isGate:false,note:'Phase 5 cleared to proceed'},
+];
+
+const STORAGE_KEY='cod_schedule_projects';
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let currentUser=null;
+let projects=[];
+let activeProject=null;
+let activePhases={}; // phaseId -> bool
+let generatedSchedule=null;
+let activeTab='gantt';
+
+// ═══════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════
+function doLogin(){
+  const u=document.getElementById('aUser').value.trim().toLowerCase();
+  const p=document.getElementById('aPass').value;
+  if(USERS[u]&&USERS[u].pass===p){
+    currentUser={...USERS[u],username:u};
+    document.getElementById('authWrap').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  }else{
+    document.getElementById('aErr').style.display='block';
+  }
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('authWrap').style.display!=='none')doLogin();});
+function doLogout(){
+  currentUser=null;
+  document.getElementById('authWrap').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+function initApp(){
+  document.getElementById('tbDate').textContent=new Date().toLocaleDateString('en-SG',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  loadProjectsFromStorage();
+  populateProjectDropdown();
+  buildPhaseToggles();
+  // default all phases on
+  PHASE_DEFS.forEach(p=>{activePhases[p.id]=true;});
+}
+
+function loadProjectsFromStorage(){
+  try{projects=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');}catch{projects=[];}
+}
+function saveProjectsToStorage(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(projects));
+}
+
+function populateProjectDropdown(){
+  const sel=document.getElementById('sbProject');
+  sel.innerHTML='<option value="">— Select project —</option>';
+  projects.forEach((p,i)=>{
+    const o=document.createElement('option');
+    o.value=i;o.textContent=p.name+(p.client?' — '+p.client:'');
+    sel.appendChild(o);
+  });
+}
+
+function buildPhaseToggles(){
+  const wrap=document.getElementById('phaseToggles');
+  wrap.innerHTML='';
+  PHASE_DEFS.forEach(ph=>{
+    const on=activePhases[ph.id]!==false;
+    const row=document.createElement('div');
+    row.className='sbPhaseRow';
+    row.innerHTML=`
+      <div class="sbPhaseDot" style="background:${ph.colour}"></div>
+      <span class="sbPhaseLabel">${ph.label}</span>
+      <div class="sbPhaseToggle" id="ptog_${ph.id}" style="background:${on?ph.colour:'#C8BFB5'}" onclick="togglePhase('${ph.id}')">
+        <div class="knob" style="left:${on?'14px':'2px'}"></div>
+      </div>`;
+    wrap.appendChild(row);
+  });
+}
+
+function togglePhase(id){
+  activePhases[id]=!activePhases[id];
+  buildPhaseToggles();
+  if(generatedSchedule)generateSchedule();
+}
+
+// ═══════════════════════════════════════════════════
+// PROJECT MANAGEMENT
+// ═══════════════════════════════════════════════════
+function openNewProject(){openModal('modalNewProject');}
+function saveNewProject(){
+  const name=document.getElementById('npName').value.trim();
+  const client=document.getElementById('npClient').value.trim();
+  if(!name||!client){alert('Project name and client name are required.');return;}
+  const proj={
+    name,client,
+    address:document.getElementById('npAddress').value.trim(),
+    type:document.getElementById('npType').value,
+    ref:document.getElementById('npRef').value.trim(),
+    idStaff:document.getElementById('npID').value,
+    entity:document.getElementById('npEntity').value,
+    value:parseFloat(document.getElementById('npValue').value)||0,
+    createdAt:new Date().toISOString(),
+    schedule:null
+  };
+  projects.unshift(proj);
+  saveProjectsToStorage();
+  populateProjectDropdown();
+  closeModal('modalNewProject');
+  // auto-select
+  document.getElementById('sbProject').value='0';
+  loadProject(0);
+}
+
+function loadProject(idx){
+  if(idx===''){
+    activeProject=null;
+    document.getElementById('tbProjectBadge').style.display='none';
+    document.getElementById('welcomeState').style.display='block';
+    document.getElementById('scheduleState').style.display='none';
+    document.getElementById('sbClient').value='';
+    document.getElementById('sbAddress').value='';
+    return;
+  }
+  activeProject=projects[parseInt(idx)];
+  document.getElementById('sbClient').value=activeProject.client||'';
+  document.getElementById('sbAddress').value=activeProject.address||'';
+  document.getElementById('tbProjectBadge').style.display='block';
+  document.getElementById('tbProjectName').textContent=activeProject.name;
+  // restore saved dates if any
+  if(activeProject.schedule){
+    const s=activeProject.schedule;
+    if(s.startDate)document.getElementById('sbStart').value=s.startDate;
+    if(s.handoverDate)document.getElementById('sbHandover').value=s.handoverDate;
+    if(s.measureDate)document.getElementById('sbMeasure').value=s.measureDate;
+    if(s.peAnchor)document.getElementById('peAnchor').value=s.peAnchor;
+    // restore durations
+    Object.entries(s.durations||{}).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v;});
+    generateSchedule();
+  }else{
+    document.getElementById('welcomeState').style.display='none';
+    document.getElementById('scheduleState').style.display='block';
+    document.getElementById('ganttWrap').innerHTML='<div style="padding:40px;text-align:center;color:var(--stone);font-size:12px;">Enter start date, handover deadline, and key dates in the sidebar — then click Generate Schedule.</div>';
+    document.getElementById('summaryCards').innerHTML='';
+    document.getElementById('alertZone').innerHTML='';
+    document.getElementById('schTitle').textContent=activeProject.name;
+    document.getElementById('schMeta').textContent=(activeProject.client||'')+(activeProject.ref?' · '+activeProject.ref:'');
+  }
+}
+
+function onDateChange(){
+  // auto-set measure date = start date if not set
+  const start=document.getElementById('sbStart').value;
+  const measure=document.getElementById('sbMeasure').value;
+  if(start&&!measure)document.getElementById('sbMeasure').value=start;
+}
+
+// ═══════════════════════════════════════════════════
+// DATE UTILITIES
+// ═══════════════════════════════════════════════════
+function addWD(date,days,inclSat){
+  let d=new Date(date);let count=0;
+  while(count<days){
+    d.setDate(d.getDate()+1);
+    const dow=d.getDay();
+    const ds=d.toISOString().split('T')[0];
+    if(dow===0)continue;// Sun always skip
+    if(dow===6&&!inclSat)continue;// Sat skip if not included
+    if(SG_PH_2026.has(ds))continue;// PH skip
+    count++;
+  }
+  return d;
+}
+function isWorkingDay(date,inclSat){
+  const dow=date.getDay();
+  const ds=date.toISOString().split('T')[0];
+  if(dow===0)return false;
+  if(dow===6&&!inclSat)return false;
+  if(SG_PH_2026.has(ds))return false;
+  return true;
+}
+function nextWorkingDay(date,inclSat){
+  let d=new Date(date);
+  d.setDate(d.getDate()+1);
+  while(!isWorkingDay(d,inclSat))d.setDate(d.getDate()+1);
+  return d;
+}
+function fmtDate(d){
+  if(!d)return'—';
+  return new Date(d).toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'});
+}
+function daysBetween(a,b){
+  return Math.round((new Date(b)-new Date(a))/(1000*86400));
+}
+
+// ═══════════════════════════════════════════════════
+// SCHEDULE GENERATION
+// ═══════════════════════════════════════════════════
+function getDur(key,fallback){
+  const el=document.getElementById(key);
+  if(el)return parseInt(el.value)||fallback;
+  return fallback;
+}
+
+function generateSchedule(){
+  if(!activeProject){alert('Please select or create a project first.');return;}
+  const startStr=document.getElementById('sbStart').value;
+  const handoverStr=document.getElementById('sbHandover').value;
+  const measureStr=document.getElementById('sbMeasure').value;
+  if(!startStr){alert('Please enter a Start Date.');return;}
+  if(!handoverStr){alert('Please enter a Handover Deadline.');return;}
+
+  const inclSat=document.getElementById('sbSat').value==='yes';
+  const elecVal=document.getElementById('dElec').value;
+  const elecParts=elecVal.split('+').map(Number);
+  const elecRI=elecParts[0]||5;
+  const elecFF=elecParts[1]||2;
+  const qcRect=parseInt(document.getElementById('dQC').value)||3;
+
+  // Build duration map
+  const durMap={
+    dPartition:getDur('dPartition',7),
+    dDemolition:getDur('dDemolition',2),
+    dCarpOff:getDur('dCarpOff',14),
+    dCarpInst:getDur('dCarpInst',5),
+    dFloor:getDur('dFloor',5),
+    dPaint:getDur('dPaint',5),
+    dElecRoughIn:elecRI,
+    dElecFinal:elecFF,
+    dQCRect:qcRect,
+  };
+
+  let cursor=new Date(startStr);
+  const tasks=[];
+
+  // Helper to schedule a block
+  const sched=(id,label,colour,dur,hours,note,isNight)=>{
+    if(dur<=0)return null;
+    const start=new Date(cursor);
+    let end;
+    if(isNight){
+      // Night works: just mark the night(s) starting from cursor
+      end=new Date(cursor);
+      end.setDate(end.getDate()+dur-1);
+      cursor=new Date(end);
+      cursor.setDate(cursor.getDate()+1);
+    }else{
+      end=addWD(new Date(start),dur-1,inclSat);
+      cursor=addWD(new Date(end),1,inclSat);
+    }
+    return{id,label,colour,start:start.toISOString().split('T')[0],end:end.toISOString().split('T')[0],hours,note,dur};
+  };
+
+  // === P1 Phase ===
+  if(activePhases['P1']){
+    tasks.push({isGroupHdr:true,label:'PHASE 1 — REAR OFFICE',colour:PHASE_COLOURS['P1']});
+    const t=sched('P1a','Partition + Ceiling (Rear)',PHASE_COLOURS['P1'],durMap.dPartition,'9am–6pm');
+    if(t)tasks.push(t);
+    const t2=sched('P1b','Aluminium / Doors (Rear)',PHASE_COLOURS['P1'],3,'9am–6pm');
+    if(t2)tasks.push(t2);
+    const t3=sched('P1c','Item Relocation',PHASE_COLOURS['P1'],1,'9am–6pm');
+    if(t3)tasks.push(t3);
+  }
+
+  // === PRE-RENO ===
+  if(activePhases['PRE']){
+    tasks.push({isGroupHdr:true,label:'PRE-RENOVATION',colour:PHASE_COLOURS['PRE']});
+    // Measurement day — use specified date or cursor
+    const mDate=measureStr?new Date(measureStr):new Date(cursor);
+    const measTask={
+      id:'PRE1',label:'Measurement Day (AM) + PTW Submission (PM)',
+      colour:PHASE_COLOURS['PRE'],
+      start:mDate.toISOString().split('T')[0],
+      end:mDate.toISOString().split('T')[0],
+      hours:'AM: All Trades | PM: PTW Submission',
+      dur:1,note:'Split day — trigger for all off-site fabrication',isAnchor:true
+    };
+    tasks.push(measTask);
+    // Set PE anchor to same day
+    document.getElementById('peAnchor').value=mDate.toISOString().split('T')[0];
+    cursor=addWD(mDate,1,inclSat);
+    // Floor protection same day as measurement
+    tasks.push({id:'PRE2',label:'Floor Protection',colour:PHASE_COLOURS['PRE'],start:mDate.toISOString().split('T')[0],end:mDate.toISOString().split('T')[0],hours:'9am–6pm',dur:1});
+  }
+
+  // off-site start = day after measurement
+  const offStart=new Date(cursor);
+
+  // === OFF-SITE CONCURRENT ===
+  if(activePhases['OFF']){
+    tasks.push({isGroupHdr:true,label:'OFF-SITE CONCURRENT',colour:PHASE_COLOURS['OFF']});
+    // These run from offStart concurrently
+    const carpEnd=addWD(new Date(offStart),durMap.dCarpOff-1,inclSat);
+    tasks.push({id:'OFF1',label:'Off-Site Fabrication — Carpentry',colour:PHASE_COLOURS['OFF'],start:offStart.toISOString().split('T')[0],end:carpEnd.toISOString().split('T')[0],hours:'Off-site',dur:durMap.dCarpOff});
+    const alumEnd=addWD(new Date(offStart),9,inclSat);
+    tasks.push({id:'OFF2',label:'Off-Site Fabrication — Aluminium / Glass',colour:PHASE_COLOURS['OFF'],start:offStart.toISOString().split('T')[0],end:alumEnd.toISOString().split('T')[0],hours:'Off-site',dur:10});
+    const signEnd=addWD(new Date(offStart),9,inclSat);
+    tasks.push({id:'OFF3',label:'Off-Site Fabrication — Signage',colour:PHASE_COLOURS['OFF'],start:offStart.toISOString().split('T')[0],end:signEnd.toISOString().split('T')[0],hours:'Off-site',dur:10});
+    tasks.push({id:'OFF4',label:'Procurement — System Furniture (PO)',colour:PHASE_COLOURS['OFF'],start:offStart.toISOString().split('T')[0],end:offStart.toISOString().split('T')[0],hours:'Order placed D+1',dur:1,note:'Long lead ~8 weeks'});
+  }
+
+  // === DEMOLITION ===
+  if(activePhases['P4D']){
+    tasks.push({isGroupHdr:true,label:'DEMOLITION (AFTER 5PM ONLY)',colour:PHASE_COLOURS['P4D']});
+    const clearStart=new Date(cursor);
+    const clearEnd=addWD(new Date(clearStart),0,inclSat);
+    tasks.push({id:'P4D1',label:'Site Clearout — Retail Floor',colour:PHASE_COLOURS['P4D'],start:clearStart.toISOString().split('T')[0],end:clearEnd.toISOString().split('T')[0],hours:'9am–6pm',dur:1});
+    cursor=addWD(clearEnd,1,inclSat);
+    const demoDays=durMap.dDemolition;
+    const demoStart=new Date(cursor);
+    const demoEnd=new Date(demoStart);
+    demoEnd.setDate(demoEnd.getDate()+demoDays-1);
+    tasks.push({id:'P4D2',label:`Demolition — ${demoDays} Night${demoDays>1?'s':(``)} (Partitions)`,colour:PHASE_COLOURS['P4D'],start:demoStart.toISOString().split('T')[0],end:demoEnd.toISOString().split('T')[0],hours:'After 5pm — cease by 6am',dur:demoDays,note:'⚠ Demolition nights only'});
+    const d3s=new Date(demoEnd);d3s.setDate(d3s.getDate()+1);
+    const d3e=new Date(d3s);
+    tasks.push({id:'P4D3',label:'Demolition — Entrance Wall [PE-gated]',colour:PHASE_COLOURS['P4D'],start:d3s.toISOString().split('T')[0],end:d3e.toISOString().split('T')[0],hours:'After 5pm — cease by 6am',dur:1,note:'🔴 Requires PE clearance'});
+    cursor=addWD(d3e,1,inclSat);
+  }
+
+  // === PHASE 4 — MAIN FITOUT ===
+  if(activePhases['P4']){
+    tasks.push({isGroupHdr:true,label:'PHASE 4 — MAIN FITOUT',colour:PHASE_COLOURS['P4']});
+    const p4tasks=[
+      {id:'P4a',label:'Electrical Rough-In',dur:durMap.dElecRoughIn},
+      {id:'P4b',label:'Partition + Ceiling Works (Retail)',dur:durMap.dPartition},
+      {id:'P4c',label:'Floor Works (Tiles + Skirting)',dur:durMap.dFloor,note:'24hr cure before carpentry'},
+      {id:'P4d',label:'Painting + Wallcover Works',dur:durMap.dPaint},
+      {id:'P4e',label:'Carpentry Installation',dur:durMap.dCarpInst},
+      {id:'P4f',label:'Electrical Final Fix + T&C',dur:durMap.dElecFinal},
+      {id:'P4g',label:'Aluminium / Glass / Doors Installation',dur:2},
+      {id:'P4h',label:'Miscellaneous — Signage + Logo',dur:2},
+    ];
+    const hours4={P4a:'9am–6pm',P4b:'9am–6pm',P4c:'9am–6pm',P4d:'9am–6pm',P4e:'9am–6pm',P4f:'9am–6pm',P4g:'9am–6pm',P4h:'9am–6pm'};
+    p4tasks.forEach(t=>{
+      const tk=sched(t.id,t.label,PHASE_COLOURS['P4'],t.dur,hours4[t.id]||'9am–6pm',t.note);
+      if(tk)tasks.push(tk);
+    });
+  }
+
+  // === QC + RECT ===
+  if(activePhases['QC']){
+    tasks.push({isGroupHdr:true,label:'QC + RECTIFICATION',colour:PHASE_COLOURS['QC']});
+    const q1=sched('QC1','QC Walk-Thru — ID Team',PHASE_COLOURS['QC'],1,'PM – Half Day');if(q1)tasks.push(q1);
+    const q2=sched('QC2',`Rectification — All Trades (${durMap.dQCRect}d)`,PHASE_COLOURS['QC'],durMap.dQCRect,'9am–6pm');if(q2)tasks.push(q2);
+    // System furniture concurrent with rectification
+    const sfStart=new Date(cursor);sfStart.setDate(sfStart.getDate()-durMap.dQCRect);
+    const sfEnd=addWD(new Date(sfStart),1,inclSat);
+    tasks.push({id:'QC3',label:'System Furniture Delivery + Installation',colour:PHASE_COLOURS['QC'],start:sfStart.toISOString().split('T')[0],end:sfEnd.toISOString().split('T')[0],hours:'9am–6pm',dur:2,note:'Concurrent with rectification'});
+  }
+
+  // === P5 FACADE ===
+  if(activePhases['P5']){
+    tasks.push({isGroupHdr:true,label:'PHASE 5 — FAÇADE (Post URA)',colour:PHASE_COLOURS['P5']});
+    const p5a=sched('P5a','Façade Limewash Paint',PHASE_COLOURS['P5'],3,'9am–6pm');if(p5a)tasks.push(p5a);
+    const p5b=sched('P5b','Reinstatement — Vents + Doors',PHASE_COLOURS['P5'],1,'9am–6pm');if(p5b)tasks.push(p5b);
+  }
+
+  // === HANDOVER ===
+  tasks.push({isGroupHdr:true,label:'HANDOVER',colour:PHASE_COLOURS['PAY']});
+  const ho1=sched('HO1','Final Clean — Full Unit',PHASE_COLOURS['PAY'],1,'9am–6pm');if(ho1)tasks.push(ho1);
+  const ho2=sched('HO2','Handover Walk-Thru + Warranty Issued',PHASE_COLOURS['PAY'],1,'9am–12pm');if(ho2)tasks.push(ho2);
+
+  generatedSchedule={tasks,startStr,handoverStr,inclSat};
+
+  // Save to project
+  if(activeProject){
+    activeProject.schedule={
+      startDate:startStr,handoverDate:handoverStr,measureDate:measureStr,
+      peAnchor:document.getElementById('peAnchor').value,
+      durations:Object.fromEntries(['dPartition','dDemolition','dCarpOff','dCarpInst','dFloor','dPaint','dElec','dQC'].map(k=>[k,document.getElementById(k)?.value])),
+      generatedAt:new Date().toISOString()
+    };
+    const idx=projects.findIndex(p=>p===activeProject);
+    if(idx>=0)projects[idx]=activeProject;
+    saveProjectsToStorage();
+  }
+
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
+function renderAll(){
+  document.getElementById('welcomeState').style.display='none';
+  document.getElementById('scheduleState').style.display='block';
+  document.getElementById('schTitle').textContent=activeProject?.name||'Project Schedule';
+  document.getElementById('schMeta').textContent=[activeProject?.client,activeProject?.ref,activeProject?.idStaff].filter(Boolean).join(' · ');
+  renderSummaryCards();
+  renderAlerts();
+  renderGantt();
+  renderPhaseTable();
+  renderPE();
+  renderMilestones();
+}
+
+function renderSummaryCards(){
+  const s=generatedSchedule;
+  if(!s)return;
+  const tasks=s.tasks.filter(t=>!t.isGroupHdr&&t.start&&t.end);
+  const lastTask=tasks[tasks.length-1];
+  const lastDate=lastTask?lastTask.end:'—';
+  const handover=s.handoverStr;
+  const startDate=s.startStr;
+  const totalWD=tasks.reduce((a,t)=>a+(t.dur||0),0);
+  const calDays=lastDate&&startDate?daysBetween(startDate,lastDate):0;
+  const buffer=lastDate&&handover?daysBetween(lastDate,handover):0;
+
+  document.getElementById('summaryCards').innerHTML=`
+    <div class="sumCard"><div class="sumVal">${fmtDate(startDate)}</div><div class="sumLabel">SITE START</div></div>
+    <div class="sumCard"><div class="sumVal">${fmtDate(lastDate)}</div><div class="sumLabel">PROGRAMME END</div><div class="sumSub">${calDays} calendar days</div></div>
+    <div class="sumCard"><div class="sumVal" style="color:${buffer>=0?'var(--success)':'var(--danger)'}">${buffer>=0?'+':''}${buffer}d</div><div class="sumLabel">BUFFER TO DEADLINE</div><div class="sumSub">Deadline: ${fmtDate(handover)}</div></div>
+    <div class="sumCard"><div class="sumVal">${totalWD}</div><div class="sumLabel">TOTAL WORKING DAYS</div><div class="sumSub">${s.inclSat?'Mon–Sat':'Mon–Fri'}</div></div>`;
+}
+
+function renderAlerts(){
+  const s=generatedSchedule;if(!s)return;
+  const tasks=s.tasks.filter(t=>!t.isGroupHdr&&t.end);
+  const lastTask=tasks[tasks.length-1];
+  const buffer=lastTask&&s.handoverStr?daysBetween(lastTask.end,s.handoverStr):0;
+  let html='';
+  if(buffer<0){html+=`<div class="alert alert-red"><span>⚠</span><div><strong>Programme overruns deadline by ${Math.abs(buffer)} days.</strong> Review phase durations or start date. Consider Saturday works or compressing Phase 1.</div></div>`;}
+  else if(buffer<5){html+=`<div class="alert alert-amber"><span>◆</span><div>Buffer is tight (${buffer} days). Any delay may push past the handover deadline. Review compression options.</div></div>`;}
+  else{html+=`<div class="alert alert-green"><span>✓</span><div>Programme fits within deadline with ${buffer} days buffer. Measurement Day and PTW trigger all off-site works.</div></div>`;}
+  document.getElementById('alertZone').innerHTML=html;
+}
+
+function renderGantt(){
+  const s=generatedSchedule;if(!s)return;
+  const tasks=s.tasks.filter(t=>!t.isGroupHdr&&t.start&&t.end);
+  if(!tasks.length){document.getElementById('ganttWrap').innerHTML='<div style="padding:30px;color:var(--stone);text-align:center;">No tasks to display. Toggle phases in sidebar.</div>';return;}
+
+  // Date range
+  const allDates=tasks.flatMap(t=>[t.start,t.end]).sort();
+  const minD=new Date(allDates[0]);minD.setDate(minD.getDate()-2);
+  const maxD=new Date(allDates[allDates.length-1]);maxD.setDate(maxD.getDate()+5);
+  if(s.handoverStr&&new Date(s.handoverStr)>maxD){maxD.setDate(new Date(s.handoverStr).getDate()+3);maxD.setMonth(new Date(s.handoverStr).getMonth());maxD.setFullYear(new Date(s.handoverStr).getFullYear());}
+
+  const days=[];let d=new Date(minD);
+  while(d<=maxD){days.push(new Date(d));d.setDate(d.getDate()+1);}
+
+  const todayStr=new Date().toISOString().split('T')[0];
+  const DAY_W=32;// px per day
+
+  // Header
+  let headerHtml=`<div class="ganttHeader">
+    <div class="ganttHeaderLabel">TRADE / PHASE</div>
+    <div class="ganttHeaderDates" style="min-width:${days.length*DAY_W}px;">`;
+  let curMonth='';
+  days.forEach(dd=>{
+    const ds=dd.toISOString().split('T')[0];
+    const dow=dd.getDay();
+    const isWE=dow===0||dow===6;
+    const isPH=SG_PH_2026.has(ds);
+    const isTdy=ds===todayStr;
+    const mo=dd.toLocaleDateString('en-SG',{month:'short'});
+    const day=dd.getDate();
+    let topLabel=day===1||dd===days[0]?`<span style="font-size:7px;display:block;color:rgba(194,164,110,0.8);margin-bottom:1px;">${mo}</span>`:'';
+    headerHtml+=`<div class="ganttHeaderDay${isWE||isPH?' weekend':''}${isTdy?' today':''}" style="min-width:${DAY_W}px;">${topLabel}${day}</div>`;
+  });
+  headerHtml+='</div></div>';
+
+  // Rows
+  let rowsHtml='';
+  const allRows=generatedSchedule.tasks;
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayOffset=daysBetween(minD.toISOString().split('T')[0],todayStr);
+  const handoverOffset=s.handoverStr?daysBetween(minD.toISOString().split('T')[0],s.handoverStr):null;
+
+  allRows.forEach(task=>{
+    if(task.isGroupHdr){
+      rowsHtml+=`<div class="ganttRow phaseHdr">
+        <div class="ganttRowLabel phaseHdr" style="border-left:3px solid ${task.colour};">
+          <div class="ganttPhaseDot" style="background:${task.colour};"></div>
+          ${task.label}
+        </div>
+        <div class="ganttCells" style="min-width:${days.length*DAY_W}px;background:#EDE8DF;">
+          ${todayOffset>=0?`<div class="todayLine" style="left:${todayOffset*DAY_W+DAY_W/2}px;"></div>`:''}
+          ${handoverOffset!==null?`<div class="handoverMarker" style="left:${handoverOffset*DAY_W+DAY_W/2}px;"></div>`:''}
+        </div></div>`;
+      return;
+    }
+    if(!task.start||!task.end)return;
+    const startOff=daysBetween(minD.toISOString().split('T')[0],task.start);
+    const endOff=daysBetween(minD.toISOString().split('T')[0],task.end);
+    const barLeft=startOff*DAY_W;
+    const barWidth=(endOff-startOff+1)*DAY_W-2;
+
+    // Cells background
+    let cellsHtml='';
+    days.forEach(dd=>{
+      const ds=dd.toISOString().split('T')[0];
+      const dow=dd.getDay();
+      const isWE=dow===0||dow===6;
+      const isPH=SG_PH_2026.has(ds);
+      const isTdy=ds===todayStr;
+      cellsHtml+=`<div class="ganttCell${isWE?' weekend':''}${isPH?' ph':''}${isTdy?' today':''}" style="min-width:${DAY_W}px;"></div>`;
+    });
+
+    const overdueFlag=task.end<todayStr&&task.id!=='PRE1'?'opacity:0.7;':''
+    rowsHtml+=`<div class="ganttRow">
+      <div class="ganttRowLabel" title="${task.hours||''}${task.note?' | '+task.note:''}">
+        <div class="ganttPhaseDot" style="background:${task.colour||'#aaa'};"></div>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${task.label}</span>
+      </div>
+      <div class="ganttCells" style="min-width:${days.length*DAY_W}px;position:relative;">
+        ${cellsHtml}
+        <div class="ganttBar" style="left:${barLeft}px;width:${barWidth}px;background:${task.colour||'#888'};${overdueFlag}" title="${task.label} | ${fmtDate(task.start)} – ${fmtDate(task.end)} | ${task.hours||''}${task.note?' | '+task.note:''}">
+          <span class="barLabel">${task.label}</span>
+        </div>
+        ${todayOffset>=0?`<div class="todayLine" style="left:${todayOffset*DAY_W+DAY_W/2}px;"></div>`:''}
+        ${handoverOffset!==null?`<div class="handoverMarker" style="left:${handoverOffset*DAY_W+DAY_W/2}px;" title="Handover Deadline: ${fmtDate(s.handoverStr)}"></div>`:''}
+      </div></div>`;
+  });
+
+  document.getElementById('ganttWrap').innerHTML=headerHtml+`<div style="overflow-x:auto;">${rowsHtml}</div>`;
+
+  // Add legend
+  document.getElementById('ganttWrap').innerHTML+=`
+    <div style="padding:10px 14px;background:#EDE8DF;border-top:1px solid #D8D0C4;display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--stone);"><div style="width:12px;height:2px;background:var(--gold);opacity:0.8;"></div>Today</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--stone);"><div style="width:12px;height:2px;background:var(--danger);opacity:0.8;"></div>Handover Deadline</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--stone);"><div style="width:12px;height:12px;background:#F5F2EE;border:1px solid #D8D0C4;"></div>Weekend</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--stone);"><div style="width:12px;height:12px;background:#FFF9E6;border:1px solid #D8D0C4;"></div>Public Holiday</div>
+      <div style="margin-left:auto;font-size:9px;color:var(--stone);">Hover bars for details · Gold line = Today · Red line = Handover deadline</div>
+    </div>`;
+}
+
+function renderPhaseTable(){
+  const s=generatedSchedule;if(!s)return;
+  const tasks=s.tasks;
+  let html=`<thead><tr>
+    <th style="width:40px;">PH</th>
+    <th>Trade / Works</th>
+    <th>Start</th>
+    <th>End</th>
+    <th style="width:60px;">WD</th>
+    <th>Working Hours</th>
+    <th>Notes</th>
+  </tr></thead><tbody>`;
+
+  tasks.forEach(t=>{
+    if(t.isGroupHdr){
+      html+=`<tr class="phaseGroupHdr"><td colspan="7" style="border-left:3px solid ${t.colour};">${t.label}</td></tr>`;
+    }else{
+      const overdue=t.end&&t.end<new Date().toISOString().split('T')[0];
+      html+=`<tr>
+        <td><div class="ganttPhaseDot" style="background:${t.colour||'#aaa'};margin:0 auto;"></div></td>
+        <td style="font-weight:600;">${t.label}${t.isAnchor?'<span style="color:var(--gold);margin-left:5px;font-size:9px;">★ ANCHOR</span>':''}</td>
+        <td style="font-size:11px;color:var(--stone);">${fmtDate(t.start)}</td>
+        <td style="font-size:11px;color:${overdue?'var(--danger)':'var(--stone)'};">${fmtDate(t.end)}</td>
+        <td style="text-align:center;font-size:11px;">${t.dur||'—'}</td>
+        <td style="font-size:10px;color:var(--stone);">${t.hours||'—'}</td>
+        <td style="font-size:10px;color:var(--stone);">${t.note||'—'}</td>
+      </tr>`;
+    }
+  });
+  html+='</tbody>';
+  document.getElementById('phaseTable').innerHTML=html;
+}
+
+function renderPE(){
+  const anchor=document.getElementById('peAnchor').value;
+  if(!anchor){document.getElementById('peTable').innerHTML='<div style="color:var(--stone);font-size:12px;padding:10px 0;">Set PTW Submission date (generated automatically from Measurement Day, or enter manually above).</div>';return;}
+  const aDate=new Date(anchor);
+  let html=`<div class="peRow header"><div>#</div><div>Milestone</div><div>Target Date</div><div>Notes</div></div>`;
+  PE_MILESTONES.forEach((m,i)=>{
+    const mDate=new Date(aDate);mDate.setDate(mDate.getDate()+m.offset);
+    const ds=mDate.toISOString().split('T')[0];
+    const today=new Date().toISOString().split('T')[0];
+    const isPast=ds<today;
+    html+=`<div class="peRow${m.isGate?' gate':''}">
+      <div style="font-size:10px;color:var(--stone);">${i+1}</div>
+      <div style="font-weight:600;font-size:11px;">${m.label}${m.isGate?'<span style="color:var(--danger);font-size:8px;margin-left:4px;font-weight:700;">GATE</span>':''}</div>
+      <div style="font-size:11px;color:${m.isAnchor?'var(--gold)':isPast?'var(--stone)':'var(--ink)'};font-weight:${m.isAnchor?700:400};">${fmtDate(ds)}</div>
+      <div style="font-size:10px;color:var(--stone);">${m.note}</div>
+    </div>`;
+  });
+  document.getElementById('peTable').innerHTML=html;
+}
+
+function renderMilestones(){
+  const s=generatedSchedule;if(!s)return;
+  const tasks=s.tasks.filter(t=>!t.isGroupHdr&&t.start);
+  const today=new Date().toISOString().split('T')[0];
+
+  // Key milestones
+  const keyIDs={PRE1:'Measurement Day + PTW',P4D2:'Demo Start',P4e:'Carpentry Install',QC1:'QC Walk-Thru',HO1:'Final Clean',HO2:'Handover'};
+  const key=tasks.filter(t=>keyIDs[t.id]);
+  let html=`<div class="card"><div class="cardTitle">KEY MILESTONES</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">`;
+  key.forEach(t=>{
+    const isPast=t.end<today;
+    const isToday=t.start===today;
+    html+=`<div style="padding:8px 14px;border:1px solid ${isPast?'var(--border)':isToday?'var(--gold)':'var(--border)'};border-radius:3px;background:${isPast?'#F0EDE8':isToday?'#FFF8EC':'#fff'};">
+      <div style="font-size:9px;color:var(--stone);letter-spacing:1px;margin-bottom:2px;">${keyIDs[t.id]}</div>
+      <div style="font-size:12px;font-weight:600;color:${isPast?'var(--stone)':isToday?'var(--gold)':'var(--ink)'};">${fmtDate(t.start)}</div>
+    </div>`;
+  });
+  html+='</div></div>';
+
+  // All tasks list
+  html+=`<div class="card"><div class="cardTitle">ALL TASKS — CHRONOLOGICAL</div>
+  <table class="phaseTable"><thead><tr><th>Trade / Works</th><th>Start</th><th>End</th><th>WD</th><th>Hours</th></tr></thead><tbody>`;
+  [...tasks].sort((a,b)=>a.start.localeCompare(b.start)).forEach(t=>{
+    const isPast=t.end<today;
+    html+=`<tr style="${isPast?'opacity:0.55;':''}">
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.colour||'#aaa'};margin-right:7px;vertical-align:middle;"></span>${t.label}</td>
+      <td style="font-size:11px;">${fmtDate(t.start)}</td>
+      <td style="font-size:11px;">${fmtDate(t.end)}</td>
+      <td style="text-align:center;">${t.dur||'—'}</td>
+      <td style="font-size:10px;color:var(--stone);">${t.hours||'—'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('milestonesContent').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════
+function switchTab(tab,el){
+  activeTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['gantt','phases','pe','milestones'].forEach(t=>{
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).style.display=t===tab?'block':'none';
+  });
+  if(tab==='gantt')renderGantt();
+  if(tab==='pe')renderPE();
+}
+
+// ═══════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ═══════════════════════════════════════════════════
+// PRINT
+// ═══════════════════════════════════════════════════
+function printSchedule(){window.print();}
+
+// ═══════════════════════════════════════════════════
+// TOPBAR DATE
+// ═══════════════════════════════════════════════════
+setInterval(()=>{
+  const el=document.getElementById('tbDate');
+  if(el)el.textContent=new Date().toLocaleDateString('en-SG',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+},60000);
+</script>
+</body>
+</html>
